@@ -2,6 +2,31 @@
 
 Just some games I made with C using Raylib.
 
+## Pistonsim
+
+Logic simulation inspired by Minecraft's redstone.
+
+![Pistonsim preview 1](./pistonsim/preview-1.png)
+
+See more info at it's [`README.md`](./pistonsim/README.md) file.
+
+Here's the `cloc` command output on the source code:
+
+```
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+C                                4             74              0            348
+C/C++ Header                     3             15              0             46
+make                             1             10              0             22
+Markdown                         1              4              0              9
+-------------------------------------------------------------------------------
+SUM:                             9            103              0            425
+-------------------------------------------------------------------------------
+```
+
+One of the larger projects I have worked on so far.
+
 ## Memory
 
 The typical card memory game. Although, this version just uses colors, no icons here.
