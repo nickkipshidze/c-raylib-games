@@ -27,7 +27,7 @@ void printWorld(struct Block *world) {
 
 void updateWorld(struct Block *world) {
     int dirOfs[4][2] = {
-        {-1, 0}, {1, 0}, {0, -1}, {0, 1}
+        {0, -1}, {1, 0}, {0, 1}, {-1, 0}
     };
 
     for (int y = 0; y < worldHeight; y++) {
@@ -37,20 +37,34 @@ void updateWorld(struct Block *world) {
 
             if (target -> blockId == BLOCK_ID_WIRE) {
                 int maxSupply = -1;
+                bool ghostSupply = false;
+                unsigned int connDirs = 0b0000;
+
                 for (int i = 0; i < 4; i++) {
                     if (
                         (getBlockId(world, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_POWER ||
                         getBlockId(world, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_WIRE) &&
                         getBlock(world, x+dirOfs[i][0], y+dirOfs[i][1]) -> active == true &&
-                        getBlock(world, x+dirOfs[i][0], y+dirOfs[i][1]) -> ghost == false &&
                         getBlock(world, x+dirOfs[i][0], y+dirOfs[i][1]) -> data > 1
                     ) {
                         int supply = getBlock(world, x+dirOfs[i][0], y+dirOfs[i][1]) -> data;
-                        if (supply >= maxSupply) maxSupply = supply;
+                        if (supply >= maxSupply) {
+                            maxSupply = supply;
+                            ghostSupply = getBlock(world, x+dirOfs[i][0], y+dirOfs[i][1]) -> ghost;
+                        }
+                    }
+                    
+                    if (
+                        getBlockId(world, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_POWER ||
+                        getBlockId(world, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_WIRE
+                    ) {
+                        connDirs |= (1 << (3 - i));
                     }
                 }
 
-                if (target -> active == false && maxSupply != -1) {
+                target -> state = connDirs;
+
+                if (target -> active == false && maxSupply != -1 && ghostSupply == false) {
                     target -> active = true;
                     target -> data = maxSupply - 1;
                     target -> ghost = true;
@@ -61,7 +75,7 @@ void updateWorld(struct Block *world) {
                         target -> active = false;
                         target -> data = 0;
                         target -> ghost = true;
-                    } else if (target -> data != maxSupply - 1) {
+                    } else if (target -> data != maxSupply - 1 && ghostSupply == false) {
                         target -> data = maxSupply - 1;
                         target -> ghost = true;
                     }
@@ -72,10 +86,13 @@ void updateWorld(struct Block *world) {
 }
 
 int getWorldHoverIdx(Camera2D camera) {
-    float relMouseX = GetMousePosition().x + camera.target.x - camera.offset.x;
-    float relMouseY = GetMousePosition().y + camera.target.y - camera.offset.y;
-    int mouseX = relMouseX / tileSize;
-    int mouseY = relMouseY / tileSize;
+    float relMouseX = GetMousePosition().x;
+    float relMouseY = GetMousePosition().y;
+    
+    Vector2 mouseWorldPos = GetScreenToWorld2D((Vector2){relMouseX, relMouseY}, camera);
+    
+    int mouseX = (int)(mouseWorldPos.x / tileSize);
+    int mouseY = (int)(mouseWorldPos.y / tileSize);
     
     if (mouseX >= 0 && mouseX < worldWidth && mouseY >= 0 && mouseY < worldHeight)
         return (mouseY * worldWidth) + mouseX;
