@@ -5,8 +5,8 @@ const int BLOCK_ID_AIR = 0x00;
 const int BLOCK_ID_POWER = 0x01;
 const int BLOCK_ID_WIRE = 0x02;
 
-int worldWidth = 16;
-int worldHeight = 8;
+int worldWidth = 128;
+int worldHeight = 128;
 
 struct Block;
 
