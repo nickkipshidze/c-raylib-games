@@ -10,7 +10,7 @@ extern int worldHeight;
 
 struct Block {
     int blockId;
-    int data;
+    float data;
     float state;
     bool active;
     bool ghost;
