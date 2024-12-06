@@ -6,7 +6,7 @@ INC_DIR := include
 
 CC := cc
 CFLAGS := -O2
-LDFLAGS := -l raylib
+LDFLAGS := -l raylib -fsanitize=address
 
 SRCS := $(wildcard $(SRC_DIR)/*.c)
 OBJS := $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
