@@ -5,9 +5,6 @@ extern const int BLOCK_ID_AIR;
 extern const int BLOCK_ID_POWER;
 extern const int BLOCK_ID_WIRE;
 
-extern int worldWidth;
-extern int worldHeight;
-
 struct Block {
     int blockId;
     float data;
