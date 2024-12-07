@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -35,12 +36,9 @@ void updateCamera(Camera2D *camera, float *camPosX, float *camPosY) {
 int main(int argc, char *argv[]) {
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Pistonsim - By Nick");
     SetTargetFPS(60);
-    
-    float timeSinceLastTick = 0.0f;
-    float gameTickInterval = 1.0f / 20.0f;
 
-    float camPosX = WINDOW_WIDTH/2.0+((worldWidth/2.0-7)*tileSize);
-    float camPosY = WINDOW_HEIGHT/2.0+((worldHeight/2.0-3)*tileSize);
+    float camPosX = WINDOW_WIDTH/2.0+((WRLDWidth/2.0-7)*WRLDTileSize);
+    float camPosY = WINDOW_HEIGHT/2.0+((WRLDHeight/2.0-3)*WRLDTileSize);
 
     Camera2D camera = {0};
     camera.offset = (Vector2){WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0};
@@ -51,30 +49,13 @@ int main(int argc, char *argv[]) {
     struct Block *world = NULL;
     initWorld(&world);
 
-    for (int x = worldWidth/2-10; x < worldWidth/2+11; x++)
-        setBlock(world, x, worldWidth/2, (struct Block){BLOCK_ID_WIRE, .state = 0b0101});
-    for (int y = worldHeight/2-10; y < worldHeight/2+11; y++)
-        setBlock(world, worldWidth/2, y, (struct Block){BLOCK_ID_WIRE, .state = 0b1010});
-    setBlock(world, worldWidth/2, worldHeight/2, (struct Block){.blockId = BLOCK_ID_POWER, .active = true, .data = 9});
+    for (int x = WRLDWidth/2-10; x < WRLDWidth/2+11; x++)
+        setBlock(world, x, WRLDWidth/2, (struct Block){BLOCK_ID_WIRE, .state = 0b0101});
+    for (int y = WRLDHeight/2-10; y < WRLDHeight/2+11; y++)
+        setBlock(world, WRLDWidth/2, y, (struct Block){BLOCK_ID_WIRE, .state = 0b1010});
+    setBlock(world, WRLDWidth/2, WRLDHeight/2, (struct Block){.blockId = BLOCK_ID_POWER, .active = true, .data = 9});
 
     while (!WindowShouldClose()) {
-        float deltaTime = GetFrameTime();
-        timeSinceLastTick += deltaTime;
-
-        int hoveridx = getWorldHoverIdx(camera);
-        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-            if (hoveridx != -1)
-                world[hoveridx] = (struct Block){BLOCK_ID_WIRE, 0, 0, false};
-        } else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-            if (hoveridx != -1)
-                world[hoveridx] = (struct Block){BLOCK_ID_AIR};
-        }
-
-        while (timeSinceLastTick >= gameTickInterval) {
-            updateWorld(world);
-            timeSinceLastTick -= gameTickInterval;
-        }
-
         updateCamera(&camera, &camPosX, &camPosY);
 
         BeginDrawing();
@@ -83,17 +64,13 @@ int main(int argc, char *argv[]) {
             BeginMode2D(camera);
                 drawBgGrid(
                     0, 0,
-                    worldWidth*tileSize, worldHeight*tileSize,
+                    WRLDWidth*WRLDTileSize, WRLDHeight*WRLDTileSize,
                     (Color){11, 11, 11, 255}
                 );
-                drawWorld(world);
-                if (hoveridx != -1)
-                    DrawRectangle(
-                        (hoveridx % worldWidth) * tileSize,
-                        (hoveridx / worldWidth) * tileSize,
-                        tileSize, tileSize, (Color){255, 255, 255, 32}
-                    );
+                updateWorld(world, camera);
             EndMode2D();
+
+            if (DEBUG_MODE) drawDebugUI(camera);
         EndDrawing();
     }
 
