@@ -3,13 +3,20 @@
 
 #include "world.h"
 #include "block.h"
+#include "draw.h"
 
-const int tileSize = 64;
+int WRLDWidth = 128;
+int WRLDHeight = 128;
+const int WRLDTileSize = 64;
+
+float WRLDLastTick = 0.0;
+float WRLDTickRate = 0.05;
+bool WRLDTickPaused = false;
 
 void initWorld(struct Block **world) {
-    *world = malloc(sizeof(struct Block) * worldWidth * worldHeight);
+    *world = malloc(sizeof(struct Block) * WRLDWidth * WRLDHeight);
 
-    for (int i = 0; i < worldWidth * worldHeight; i++) {
+    for (int i = 0; i < WRLDWidth * WRLDHeight; i++) {
         (*world)[i] = (struct Block){
             BLOCK_ID_AIR, -1, -1, false
         };
@@ -17,21 +24,21 @@ void initWorld(struct Block **world) {
 }
 
 void printWorld(struct Block *world) {
-    for (int y = 0; y < worldHeight; y++) {
-        for (int x = 0; x < worldWidth; x++) {
-            printf("%d ", world[y*worldWidth+x].blockId);
+    for (int y = 0; y < WRLDHeight; y++) {
+        for (int x = 0; x < WRLDWidth; x++) {
+            printf("%d ", world[y*WRLDWidth+x].blockId);
         }
         printf("\n");
     }
 }
 
-void updateWorld(struct Block *world) {
+void tickWorld(struct Block *world) {
     int dirOfs[4][2] = {
         {0, -1}, {1, 0}, {0, 1}, {-1, 0}
     };
 
-    for (int y = 0; y < worldHeight; y++) {
-        for (int x = 0; x < worldWidth; x++) {
+    for (int y = 0; y < WRLDHeight; y++) {
+        for (int x = 0; x < WRLDWidth; x++) {
             struct Block *target = getBlock(world, x, y);
             target -> ghost = false;
 
@@ -85,17 +92,54 @@ void updateWorld(struct Block *world) {
     }
 }
 
+void updateWorld(struct Block *world, Camera2D camera) {
+    int hoveridx = getWorldHoverIdx(camera);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+        if (hoveridx != -1)
+            world[hoveridx] = (struct Block){BLOCK_ID_WIRE, 0, 0, false};
+    } else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (hoveridx != -1)
+            world[hoveridx] = (struct Block){BLOCK_ID_AIR};
+    }
+
+    if (IsKeyPressed(KEY_F3)) DEBUG_MODE = !DEBUG_MODE;
+
+    if (DEBUG_MODE) {
+        if (IsKeyPressed(KEY_SPACE)) WRLDTickPaused = !WRLDTickPaused;
+        if (WRLDTickPaused && IsKeyPressed(KEY_ENTER)) {
+            tickWorld(world);
+        }
+    }
+
+    if (!WRLDTickPaused) {
+        WRLDLastTick += GetFrameTime();
+        while (WRLDLastTick >= WRLDTickRate) {
+            tickWorld(world);
+            WRLDLastTick -= WRLDTickRate;
+        }
+    }
+
+    drawWorld(world, camera);
+
+    if (hoveridx != -1)
+        DrawRectangle(
+            (hoveridx % WRLDWidth) * WRLDTileSize,
+            (hoveridx / WRLDWidth) * WRLDTileSize,
+            WRLDTileSize, WRLDTileSize, (Color){255, 255, 255, 32}
+        );
+}
+
 int getWorldHoverIdx(Camera2D camera) {
     float relMouseX = GetMousePosition().x;
     float relMouseY = GetMousePosition().y;
     
     Vector2 mouseWorldPos = GetScreenToWorld2D((Vector2){relMouseX, relMouseY}, camera);
     
-    int mouseX = (int)(mouseWorldPos.x / tileSize);
-    int mouseY = (int)(mouseWorldPos.y / tileSize);
+    int mouseX = (int)(mouseWorldPos.x / WRLDTileSize);
+    int mouseY = (int)(mouseWorldPos.y / WRLDTileSize);
     
-    if (mouseX >= 0 && mouseX < worldWidth && mouseY >= 0 && mouseY < worldHeight)
-        return (mouseY * worldWidth) + mouseX;
+    if (mouseX >= 0 && mouseX < WRLDWidth && mouseY >= 0 && mouseY < WRLDHeight)
+        return (mouseY * WRLDWidth) + mouseX;
     else
         return -1;
 }
