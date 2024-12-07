@@ -7,8 +7,11 @@
 extern const int WINDOW_WIDTH;
 extern const int WINDOW_HEIGHT;
 
+extern bool DEBUG_MODE;
+
 void drawBlock(struct Block block, int x, int y);
-void drawWorld(struct Block *world);
+void drawWorld(struct Block *world, Camera2D camera);
 void drawBgGrid(int x1, int y1, int x2, int y2, Color color);
+void drawDebugUI(Camera2D camera);
 
 #endif
