@@ -14,6 +14,8 @@ Vector2 moveVecTo(Vector2 source, Vector2 target, float drift) {
 }
 
 void updateCamera(Camera2D *camera, float *camPosX, float *camPosY) {
+    camera -> offset = (Vector2){WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0};
+
     camera -> target = moveVecTo(
         camera -> target,
         (Vector2){*camPosX, *camPosY},
@@ -34,14 +36,14 @@ void updateCamera(Camera2D *camera, float *camPosX, float *camPosY) {
 }
 
 int main(int argc, char *argv[]) {
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Pistonsim - By Nick");
-    SetTargetFPS(60);
+    SetTargetFPS(120);
 
     float camPosX = WINDOW_WIDTH/2.0+((WRLDWidth/2.0-7)*WRLDTileSize);
     float camPosY = WINDOW_HEIGHT/2.0+((WRLDHeight/2.0-3)*WRLDTileSize);
 
     Camera2D camera = {0};
-    camera.offset = (Vector2){WINDOW_WIDTH/2.0, WINDOW_HEIGHT/2.0};
     camera.target = (Vector2){camPosX, camPosY};
     camera.rotation = 0.0;
     camera.zoom = 1.0;
@@ -58,6 +60,9 @@ int main(int argc, char *argv[]) {
     while (!WindowShouldClose()) {
         updateCamera(&camera, &camPosX, &camPosY);
 
+        WINDOW_WIDTH = GetScreenWidth();
+        WINDOW_HEIGHT = GetScreenHeight();
+
         BeginDrawing();
             ClearBackground(BLACK);
 
@@ -70,6 +75,7 @@ int main(int argc, char *argv[]) {
                 updateWorld(world, camera);
             EndMode2D();
 
+            drawHotbarUI();
             if (DEBUG_MODE) drawDebugUI(camera);
         EndDrawing();
     }
