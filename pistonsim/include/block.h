@@ -10,7 +10,6 @@ struct Block {
     float data;
     float state;
     bool active;
-    bool ghost;
 };
 
 void setBlock(struct Block *world, int x, int y, struct Block block);
