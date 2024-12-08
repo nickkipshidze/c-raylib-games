@@ -18,7 +18,7 @@ void initWorld(struct Block **world) {
 
     for (int i = 0; i < WRLDWidth * WRLDHeight; i++) {
         (*world)[i] = (struct Block){
-            BLOCK_ID_AIR, -1, -1, false
+            BLOCK_ID_AIR, 0, 0, false
         };
     }
 }
@@ -37,33 +37,35 @@ void tickWorld(struct Block *world) {
         {0, -1}, {1, 0}, {0, 1}, {-1, 0}
     };
 
+    struct Block *worldCpy = malloc(sizeof(struct Block) * WRLDHeight * WRLDWidth);
+    for (int i = 0; i < WRLDWidth * WRLDHeight; i++) {
+        worldCpy[i] = (struct Block){world[i].blockId, world[i].data, world[i].state, world[i].active};
+    }
+
     for (int y = 0; y < WRLDHeight; y++) {
         for (int x = 0; x < WRLDWidth; x++) {
             struct Block *target = getBlock(world, x, y);
-            target -> ghost = false;
 
             if (target -> blockId == BLOCK_ID_WIRE) {
                 int maxSupply = -1;
-                bool ghostSupply = false;
                 unsigned int connDirs = 0b0000;
 
                 for (int i = 0; i < 4; i++) {
                     if (
-                        (getBlockId(world, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_POWER ||
-                        getBlockId(world, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_WIRE) &&
-                        getBlock(world, x+dirOfs[i][0], y+dirOfs[i][1]) -> active == true &&
-                        getBlock(world, x+dirOfs[i][0], y+dirOfs[i][1]) -> data > 1
+                        (getBlockId(worldCpy, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_POWER ||
+                        getBlockId(worldCpy, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_WIRE) &&
+                        getBlock(worldCpy, x+dirOfs[i][0], y+dirOfs[i][1]) -> active == true &&
+                        getBlock(worldCpy, x+dirOfs[i][0], y+dirOfs[i][1]) -> data > 1
                     ) {
-                        int supply = getBlock(world, x+dirOfs[i][0], y+dirOfs[i][1]) -> data;
+                        int supply = getBlock(worldCpy, x+dirOfs[i][0], y+dirOfs[i][1]) -> data;
                         if (supply >= maxSupply) {
                             maxSupply = supply;
-                            ghostSupply = getBlock(world, x+dirOfs[i][0], y+dirOfs[i][1]) -> ghost;
                         }
                     }
                     
                     if (
-                        getBlockId(world, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_POWER ||
-                        getBlockId(world, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_WIRE
+                        getBlockId(worldCpy, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_POWER ||
+                        getBlockId(worldCpy, x+dirOfs[i][0], y+dirOfs[i][1]) == BLOCK_ID_WIRE
                     ) {
                         connDirs |= (1 << (3 - i));
                     }
@@ -71,32 +73,31 @@ void tickWorld(struct Block *world) {
 
                 target -> state = connDirs;
 
-                if (target -> active == false && maxSupply != -1 && ghostSupply == false) {
+                if (target -> active == false && maxSupply != -1) {
                     target -> active = true;
                     target -> data = maxSupply - 1;
-                    target -> ghost = true;
                 }
 
                 if (target -> active == true) {
                     if (maxSupply == -1) {
                         target -> active = false;
                         target -> data = 0;
-                        target -> ghost = true;
-                    } else if (target -> data != maxSupply - 1 && ghostSupply == false) {
+                    } else if (target -> data != maxSupply - 1) {
                         target -> data = maxSupply - 1;
-                        target -> ghost = true;
                     }
                 }
             }
         }
     }
+
+    free(worldCpy);
 }
 
 void updateWorld(struct Block *world, Camera2D camera) {
     int hoveridx = getWorldHoverIdx(camera);
     if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
         if (hoveridx != -1)
-            world[hoveridx] = (struct Block){BLOCK_ID_WIRE, 0, 0, false};
+            world[hoveridx] = HOTBAR_BLOCKS[HOTBAR_SELECTED];
     } else if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         if (hoveridx != -1)
             world[hoveridx] = (struct Block){BLOCK_ID_AIR};
