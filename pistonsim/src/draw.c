@@ -5,8 +5,21 @@
 #include "block.h"
 #include "world.h"
 
-const int WINDOW_WIDTH = 1024;
-const int WINDOW_HEIGHT = 512;
+int WINDOW_WIDTH = 1024;
+int WINDOW_HEIGHT = 512;
+
+int HOTBAR_SELECTED = 4;
+struct Block HOTBAR_BLOCKS[9] = {
+    (struct Block){1, 9, 0, true},
+    (struct Block){2, 0, 15, true},
+    (struct Block){0},
+    (struct Block){0},
+    (struct Block){0},
+    (struct Block){0},
+    (struct Block){0},
+    (struct Block){0},
+    (struct Block){0},
+};
 
 bool DEBUG_MODE = false;
 
@@ -36,18 +49,10 @@ void drawBlock(struct Block block, int x, int y) {
 
     if (DEBUG_MODE) {
         char debugText[32];
-        sprintf(debugText, "0x%04X", block.blockId);
+        sprintf(debugText, "0x%04X\n%.4f\n%.4f\n", block.blockId, block.data, block.state);
+        if (block.active) strcat(debugText, "true");
+        else strcat(debugText, "false");
         DrawText(debugText, x+5, y+5, 7, (Color){255, 255, 0, 32});
-        sprintf(debugText, "%.4f", block.data);
-        DrawText(debugText, x+5, y+15, 7, (Color){255, 255, 0, 32});
-        sprintf(debugText, "%.4f", block.state);
-        DrawText(debugText, x+5, y+25, 7, (Color){255, 255, 0, 32});
-        if (block.active) strcpy(debugText, "true");
-        else strcpy(debugText, "false");
-        DrawText(debugText, x+5, y+35, 7, (Color){255, 255, 0, 32});
-        if (block.ghost) strcpy(debugText, "true");
-        else strcpy(debugText, "false");
-        DrawText(debugText, x+5, y+45, 7, (Color){255, 255, 0, 32});
     }
 }
 
@@ -66,6 +71,59 @@ void drawBgGrid(int x1, int y1, int x2, int y2, Color color) {
         for (int x = x1; x < x2; x += WRLDTileSize)
             if ((x / WRLDTileSize + y / WRLDTileSize) % 2 == 0)
                 DrawRectangle(x, y, WRLDTileSize, WRLDTileSize, color);
+}
+
+void drawHotbarUI() {
+    int cellCount = 9;
+    int cellMargin = 10;
+    int cellPadding = 5;
+    int cellSize = WRLDTileSize + (cellPadding * 2);
+
+    int bgWidth = (cellSize * cellCount) + (cellMargin * cellCount) + cellMargin;
+    int bgHeight = (cellMargin * 2) + cellSize;
+
+    int bgX = WINDOW_WIDTH/2 - bgWidth/2;
+    int bgY = WINDOW_HEIGHT - bgHeight - 20;
+
+    DrawRectangleRounded(
+        (Rectangle){bgX, bgY, bgWidth, bgHeight},
+        0.2, 9, (Color){64, 64, 64, 128}
+    );
+
+    int numkeys[9] = {KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR, KEY_FIVE, KEY_SIX, KEY_SEVEN, KEY_EIGHT, KEY_NINE};
+    for (int i = 0; i < 9; i++) {
+        if (IsKeyPressed(numkeys[i]))
+            HOTBAR_SELECTED = i;
+    }
+
+    for (int i = 0; i < cellCount; i++) {
+        if (HOTBAR_SELECTED == i) {
+            DrawRectangleRounded(
+                (Rectangle){
+                    bgX + (i * cellSize) + (i * cellMargin) + cellMargin - 3,
+                    bgY + cellMargin - 3,
+                    cellSize + 6, cellSize + 6
+                },
+                0.2, 9, (Color){128, 128, 128, 128}
+            );
+        } else {
+            DrawRectangleRounded(
+                (Rectangle){
+                    bgX + (i * cellSize) + (i * cellMargin) + cellMargin,
+                    bgY + cellMargin,
+                    cellSize, cellSize
+                },
+                0.2, 9, (Color){64, 64, 64, 128}
+            );
+        }
+        if (HOTBAR_BLOCKS[i].blockId != 0) {
+            drawBlock(
+                HOTBAR_BLOCKS[i],
+                bgX + (i * cellSize) + (i * cellMargin) + cellMargin + cellPadding,
+                bgY + cellMargin + cellPadding
+            );
+        }
+    }
 }
 
 void drawDebugUI(Camera2D camera) {
